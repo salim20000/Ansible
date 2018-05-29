@@ -1,0 +1,16 @@
+- name: subscription check {{servername}}
+  shell: "{{ item }}"
+  environment:
+    PATH: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+  with_items:
+    - subscription-manager refresh
+    - yum clean all && rm -rf /var/cache/yum/*
+    - service goferd restart
+    - katello-package-upload
+    - yum makecache
+  register: subscription
+
+- debug: 
+    msg: Subscription refresh is completed.
+  when:
+    - subscription.changed

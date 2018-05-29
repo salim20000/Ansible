@@ -1,0 +1,66 @@
+---
+- include_vars: patching_vars{{ansible_distribution_major_version}}.yml
+
+- debug: var="{{ item }}"
+  with_items:
+    - meltdown_view
+    - default_view
+    - package_name
+
+- name: Display linux version 
+  debug:
+    msg: "{{ ansible_hostname }} is RHEL {{ ansible_distribution_major_version }}"
+
+- name: Run prepatch check Python Requests Module
+  import_tasks: prepatch_check.yml
+
+
+- name: Run Meltdown View attachment Script
+  script: meltdown-view{{ansible_distribution_major_version}}.py
+
+- name: Check Meltdown View bundle
+  import_tasks: check_bundle.yml
+    
+- set_fact: 
+    mview: "{{ True if (patchbundle.stdout == meltdown_view) else False }}"
+
+- debug: 
+    msg: Meltdown view attached is {{ mview }}
+
+- name: Run Subscription Refresh for Meltdown View
+  import_tasks: subs_refresh.yml
+  when:
+    - mview == True
+
+- name: Updating System {{ ansible_hostname }}
+  import_tasks: check_update_system.yml
+  when:
+    - subscription.changed
+    - mview == True
+
+- name: Run Default View attachment Script
+  script: default-view.py
+
+- name: Check Default View bundle
+  import_tasks: check_bundle.yml
+
+- set_fact:
+    dview: "{{ True if (patchbundle.stdout == default_view) else False }}"
+
+- debug:
+    msg: Default view attached is {{ dview }}
+
+- name: Run Subscription Refresh for Default View
+  import_tasks: subs_refresh.yml
+  when:
+    - dview == True
+
+- name: Run Update package playbook
+  import_tasks: update_package.yml
+  when:
+    - dview == True
+
+- name: Reboot System if required
+  import_tasks: reboot.yml
+  when:
+    - reboot_hint.stdout == "reboot required"

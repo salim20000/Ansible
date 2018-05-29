@@ -1,0 +1,23 @@
+#Check Installed package
+#Author:  GTS-ECCO-L2 Unix: Mohammad Salman Ali
+#Date: 22 March 2018
+
+---
+- name: Check Installed packages on {{ansible_hostname}}
+  yum:
+    list: installed
+  register: yum_packages
+
+- name: Checking if {{package}} is in Installed packages on {{ansible_hostname}}.
+  set_fact:
+    check_package: "{{ 'Passed' if (vars['package'] in yum_packages|json_query('results[*].name')) else 'Failed' }}"
+
+- name: Checking {{package}} version on {{ansible_hostname}}.
+  set_fact:
+    "{{package_state}}": "{{package}} is already installed"
+    "{{package_versions}}": "{{yum_packages|json_query(jsonquery1)}}"
+  vars:
+    jsonquery1: "results[?name=='{{package}}'].{name: name, version: version, state: yumstate, release: release, Package: envra}"
+  when:
+    - check_package== 'Passed'
+

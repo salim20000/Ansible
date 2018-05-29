@@ -1,0 +1,72 @@
+#Trend Micro Package Install/Update
+#Author:  GTS-ECCO-L2 Unix: Mohammad Salman Ali
+#Date: 22 March 2018
+
+---
+
+- name: check Trend micro Package on {{ansible_hostname}}.
+  import_tasks: check_package.yml
+  vars:
+    package: ds_agent
+    package_state: package_state_ds
+    package_versions: package_versions_ds
+
+- name: Display Current Installeda Version
+  debug: 
+    var: item 
+  with_items:
+    - "{{package_state_ds}}"
+    - "{{package_versions_ds}} "
+  when:
+    - check_package == 'Passed'
+  register: check_ds_agent
+
+- name: Download the latest Trend Micro rpm from ftp for RHEL {{ansible_distribution_major_version}} to /tmp directory
+  get_url:
+    url: "{{tm_ftp}}{{tm_pack}}"
+    dest: /tmp
+    mode: 0644
+
+- name: Install/upgrade Latest Trendmicro rpm 
+  yum:
+    name: /tmp/{{tm_pack}}
+    state: present
+  register: yumout
+
+- name: check Trend micro Package {{ansible_hostname}}
+  import_tasks: check_package.yml
+  vars:
+    package: ds_agent
+    package_state: package_state_ds
+    package_versions: package_versions_ds
+
+- debug: var=item
+  with_items: "{{package_versions_ds}} "
+  when:
+    - check_package == 'Passed'
+  register: check_ds_agent_updt
+
+- set_fact:
+    compare_ds_agent: "{{ 'Passed' if check_ds_agent_updt.results[0].item.Package == check_ds_agent.results[1].item.Package else 'Failed' }}"
+  when:
+    - check_ds_agent.results is defined
+
+######Final Result#######
+
+- debug: 
+    msg: "Latest Version of TrendMicro is ALREADY Installed: {{check_ds_agent_updt.results[0].item.Package}}"
+  when:
+    - compare_ds_agent is defined
+    - compare_ds_agent == 'Passed'
+
+- debug: 
+    msg: "TrendMicro is Upgraded to the Latest version: {{check_ds_agent_updt.results[0].item.Package}}"
+  when:
+    - compare_ds_agent is defined
+    - compare_ds_agent == 'Failed'
+
+- debug:
+    msg: "TrendMicro is Installed: {{check_ds_agent_updt.results[0].item.Package}}"
+  when:
+    - compare_ds_agent is undefined
+  

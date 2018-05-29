@@ -1,0 +1,8 @@
+- name: Check Subscription Bundle on {{servername}}
+  shell: subscription-manager identity | grep environment| awk '{print $3}'
+  args:
+    executable: /bin/bash
+  register: patchbundle
+
+- debug:
+    msg: Patch bundle is {{ patchbundle.stdout }}

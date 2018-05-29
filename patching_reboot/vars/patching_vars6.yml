@@ -1,0 +1,4 @@
+---
+meltdown_view: Library/RHEL-6-meltdown-view
+default_view: Library
+package_name: nfs-utils

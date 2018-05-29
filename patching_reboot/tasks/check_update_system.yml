@@ -1,0 +1,39 @@
+- name: Checking /boot free space more than 100MB on  {{servername}}
+  shell: |
+    df -P /boot | awk '0+$4 >= 102400 {print "boot free space ok"}'
+  register: prepatch
+
+- debug: 
+    msg: "{{ prepatch.stdout }}"
+  when:
+    - prepatch.changed
+
+- name: Checking updates
+  shell: yum check-update | wc -l
+  environment:
+    PATH: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+  register: yumoutput
+
+- debug: 
+    msg: "{{yumoutput.stdout}} packages needs to be updated"
+
+- name: Updating System {{servername}}
+  yum:
+   name: '*'
+   state: latest
+  register: update
+  when:
+    - yumoutput.changed
+    - prepatch.stdout == "boot free space ok"
+
+- debug:
+    msg: "system update done on {{servername}}."
+
+- name: Checking reboot Required on {{servername}}
+  shell: LAST_KERNEL=$(rpm -q --last kernel | awk 'NR==1{sub(/kernel-/,""); print $1}'); CURRENT_KERNEL=$(uname -r); if [ $LAST_KERNEL != $CURRENT_KERNEL ]; then echo 'reboot required'; else echo 'no reboot required'; fi
+  register: reboot_hint
+
+- name: Display reboot requirement
+  debug:
+    msg: "{{ reboot_hint.stdout }}"
+  when: reboot_hint|changed

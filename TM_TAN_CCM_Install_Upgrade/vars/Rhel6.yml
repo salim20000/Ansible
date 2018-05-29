@@ -1,0 +1,5 @@
+tm_ftp: https://10.0.34.179/TrendMicro/Trend_Micro_FTP/Trend_DS_FTP_Agents/Red%20Hat%20Enterprise%206%20(64%20bit)/
+tm_pack: Agent-Core-RedHat_EL6-9.6.2-8352.x86_64.rpm
+tan_ftp: ftp://10.0.34.179/Tanium/Clients/03_Enterprise%20(PROD)/Linux/03_ENT/RedHat_5_or_6/
+tan_pack: TaniumClient-6.0.314.1321-1.i686.rpm
+tan_key: ftp://10.0.34.179/Tanium/Clients/03_Enterprise%20(PROD)/A_Tanium_Public_Key_PROD/tanium.pub

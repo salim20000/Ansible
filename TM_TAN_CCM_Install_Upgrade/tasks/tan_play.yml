@@ -1,0 +1,108 @@
+#Tanium Client Package Install/Update
+#Author:  GTS-ECCO-L2 Unix: Mohammad Salman Ali
+#Date: 29 March 2018
+
+---
+
+- name: check Tanium Package on {{ansible_hostname}}.
+  import_tasks: check_package.yml
+  vars:
+    package: TaniumClient
+    package_state: package_state_tan
+    package_versions: package_versions_tan
+
+- name: Display Current Installed Version of Tanium Client on {{ansible_hostname}}.
+  debug: 
+    var: item 
+  with_items:
+    - "{{package_state_tan}}"
+    - "{{package_versions_tan}} "
+  when:
+    - check_package == 'Passed'
+  register: check_tan_client
+
+- name: Download the latest Tanium Client rpm from ftp for RHEL {{ansible_distribution_major_version}} to /tmp directory
+  get_url:
+    url: "{{tan_ftp}}{{tan_pack}}"
+    dest: /tmp
+    mode: 0644
+
+- name: Install/Update Tanium Client on {{ansible_hostname}}.
+  yum:
+    name: /tmp/{{tan_pack}}
+    state: present
+  register: yumout_tan
+
+- name: Check Tanium Client Package on {{ansible_hostname}}
+  import_tasks: check_package.yml
+  vars:
+    package: TaniumClient
+    package_state: package_state_tan
+    package_versions: package_versions_tan
+
+- debug: var=item
+  with_items: "{{package_versions_tan}} "
+  when:
+    - check_package == 'Passed'
+  register: check_tan_client_updt
+
+- set_fact:
+    compare_tan_client: "{{ 'Passed' if check_tan_client_updt.results[0].item.Package == check_tan_client.results[1].item.Package else 'Failed' }}"
+  when:
+    - check_tan_client.results is defined
+
+- name: Add the Tanium IP and server name in the /etc/hosts file
+  blockinfile:
+    dest: /etc/hosts
+    marker: "## {mark} Add Tanium Server by Ansible ##"
+    block: |
+      #Tanium Server
+      10.57.24.234 TOCGTANAPP1PW
+    backup: yes
+
+- name: Update the Tanium server IP address in TaniumClient.ini file
+  lineinfile:
+    dest: /opt/Tanium/TaniumClient/TaniumClient.ini
+    regexp: '^ServerName='
+    line: 'ServerName=TOCGTANAPP1PW'
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Update the LogVerbosity Level to 1 to enable client logging in TaniumClient.ini file
+  lineinfile:
+    dest: /opt/Tanium/TaniumClient/TaniumClient.ini
+    regexp: '^LogVerbosityLevel'
+    line: 'LogVerbosityLevel=1'
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Download the tanium.pub file to /opt/Tanium/TaniumClient directory and start the taniumclient service
+  get_url:
+    url: "{{tan_key}}"
+    dest: /opt/Tanium/TaniumClient/
+    mode: 0644
+  notify:
+    - Start tanium{{ansible_distribution_major_version}}
+
+#######Final Results#########
+
+- debug: 
+    msg: "Latest Version of Tanium Client is ALREADY Installed: {{check_tan_client_updt.results[0].item.Package}} on {{ansible_hostname}}"
+  when:
+    - compare_tan_client is defined
+    - compare_tan_client == 'Passed'
+
+- debug: 
+    msg: "Tanium Client is Upgraded to the Latest version: {{check_tan_client_updt.results[0].item.Package}} on {{ansible_hostname}}"
+  when:
+    - compare_tan_client is defined
+    - compare_tan_client == 'Failed'
+
+- debug:
+    msg: "Tanium Client is Installed: {{check_tan_client_updt.results[0].item.Package}} on {{ansible_hostname}}"
+  when:
+    - compare_tan_client is undefined
+  
+

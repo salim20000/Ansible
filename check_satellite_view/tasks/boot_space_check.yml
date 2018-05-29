@@ -1,0 +1,10 @@
+- name: Checking /boot free space more than 100MB on  {{ansible_hostname}}
+  debug:
+    msg: "{{ansible_mounts|json_query('[?mount == `/boot`]|[0].{name: mount, space_available: size_available}')}}"
+
+- set_fact:
+    chk_boot_free_sp: "{{ 'Passed' if ((ansible_mounts|json_query('[?mount == `/boot`]|[0].size_available')) / 1024 / 1024)| int >= 110 else 'Failed'}}"
+
+- debug: 
+    msg: "/boot free space more than 100MB check: {{chk_boot_free_sp}}"
+

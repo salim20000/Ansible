@@ -1,0 +1,7 @@
+- name: Install/update {{package_name}} on {{servername}}
+  yum:
+    name: "{{package_name}}"
+    state: latest
+  register: package_update
+- debug: 
+    var: package_update.results

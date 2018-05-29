@@ -1,0 +1,9 @@
+---
+- name: Check python requests installed.
+  yum:
+    name: python-requests
+    state: present
+  register: pyreq
+
+- debug:
+    msg: "{{pyreq.results}}"

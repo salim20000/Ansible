@@ -1,0 +1,75 @@
+---
+- include_vars: patching_vars{{ansible_distribution_major_version}}.yml
+
+- debug: var="{{ item }}"
+  with_items:
+    - meltdown_view
+    - default_view
+
+- name: Display linux version 
+  debug:
+    msg: "{{ ansible_hostname }} is RHEL {{ ansible_distribution_major_version }}"
+
+- name: Run check satellite required Packages
+  import_tasks: prepatch_check.yml
+
+- name: Checking /boot free space
+  import_tasks: boot_space_check.yml
+
+- name: Check executable permissions on /tmp and /var/tmp
+  import_tasks: exec_perm.yml
+
+- name: Run Meltdown View attachment Script
+  script: meltdown-view{{ansible_distribution_major_version}}.py
+  ignore_errors: yes
+
+- name: Check Meltdown View bundle
+  import_tasks: check_bundle.yml
+  
+- set_fact: 
+    chk_mview: "{{ 'Passed' if (patchbundle.stdout == meltdown_view) else 'Failed'}}"
+
+- debug: 
+    msg: Meltdown view attached is {{ chk_mview }}
+
+- name: Run Subscription Refresh for Meltdown View
+  import_tasks: subs_refresh.yml
+  when:
+    - chk_mview == 'Passed'
+
+
+- name: Run Default View attachment Script
+  script: default-view.py
+  ignore_errors: yes
+
+- name: Check Default View bundle
+  import_tasks: check_bundle.yml
+
+- set_fact:
+    chk_dview: "{{ 'Passed' if (patchbundle.stdout == default_view) else 'Failed' }}"
+
+- debug:
+    msg: Default view attached is {{ chk_dview }}
+
+- name: Run Subscription Refresh for Default View
+  import_tasks: subs_refresh.yml
+  when:
+    - chk_dview == 'Passed'
+
+- name: Results
+  debug:
+    msg: 
+     - "Satellite Required Packages Check: {{chk_sat_pack}}"
+     - "Exec permissions check on /tmp: {{chk_tmp_perm}}" 
+     - "/boot free space more than 100MB check: {{chk_boot_free_sp}}"
+     - "Meltdown View Check: {{chk_mview}}"
+     - "Default View Check: {{chk_dview}}"
+
+- assert:
+    that:
+      - "chk_sat_pack == 'Passed'"
+      - "chk_tmp_perm == 'Passed'"
+      - "chk_boot_free_sp == 'Passed'"
+      - "chk_mview == 'Passed'"
+      - "chk_dview == 'Passed'"
+    msg: "Some Checks are failed on {{ansible_hostname}}"

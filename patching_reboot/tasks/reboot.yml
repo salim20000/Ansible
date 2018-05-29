@@ -1,0 +1,8 @@
+- name: Rebooting {{servername}}
+  debug:
+    msg: "rebooting initiated on {{servername}}"
+- shell: shutdown -r +1 “Rebooting System ”
+  environment:
+    PATH: /usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin  
+  register: rebooting
+

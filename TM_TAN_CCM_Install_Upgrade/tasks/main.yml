@@ -1,0 +1,33 @@
+#Install/Upgrade Trend Micro & Tanium and Run CCM Script in Linux Systems
+#Author:  GTS-ECCO-L2 Unix: Mohammad Salman Ali
+#Date: 22 March 2018
+---
+- include_vars: "Rhel{{ansible_distribution_major_version}}.yml"
+
+- name: Running on {{ansible_hostname}}
+  debug:
+    msg: "{{ ansible_hostname }} is RHEL {{ ansible_distribution_major_version }}"
+
+- debug:
+   msg:
+     - Run Trend Micro Install/Update : "{{tm_play}}"
+     - Run Tanium Client Install/Update: "{{tan_play}}"
+
+- name: Packages Details
+  debug:
+    msg: 
+     - "Trend Micro Package for  RHEL {{ ansible_distribution_major_version }}: {{tm_pack}}"
+     - "Tanium Client Package for  RHEL {{ ansible_distribution_major_version }}: {{tan_pack}}"
+
+
+- name: Install/Upgrade TrendMicro on {{ansible_hostname}}
+  include_tasks: tm_play.yml
+  when:
+    - tm_play is defined
+    - tm_play|lower == 'yes'
+
+- name: Install/Upgrade Tanium Client on {{ansible_hostname}}
+  include_tasks: tan_play.yml
+  when:
+    - tan_play is defined
+    - tan_play|lower == 'yes'

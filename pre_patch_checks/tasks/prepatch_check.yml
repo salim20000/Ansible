@@ -1,0 +1,37 @@
+---
+- name: Check satellite required packages.
+  yum:
+    list: installed
+  register: yum_packages
+
+
+- set_fact:
+    check_gfer: "{{ 'Passed' if ('gofer' in yum_packages|json_query('results[*].name')) else 'Failed' }}"
+    check_pyreq: "{{ 'Passed' if ('python-requests' in yum_packages|json_query('results[*].name')) else 'Failed' }}"
+    check_katagnt: "{{ 'Passed' if ('katello-agent' in yum_packages|json_query('results[*].name')) else 'Failed' }}"
+
+- set_fact:
+    chk_sat_pack: "{{ 'Passed' if ((check_gfer == 'Passed') and (check_pyreq == 'Passed') and (check_katagnt == 'Passed')) else 'Failed' }}"
+
+
+- debug: var=item
+  with_items: 
+    - "{{yum_packages|json_query(jsonquery1)}}"
+    - "{{yum_packages|json_query(jsonquery2)}}"
+    - "{{yum_packages|json_query(jsonquery3)}}"
+  vars:
+    jsonquery1: "results[?name=='gofer'].{name: name, version: version, state: yumstate}"
+    jsonquery2: "results[?name=='python-requests'].{name: name, version: version, state: yumstate}"
+    jsonquery3: "results[?name=='katello-agent'].{name: name, version: version, state: yumstate}"
+  register: state1
+
+- debug:
+    msg: "{{item}}"
+  with_items:
+    - "gofer is Installed: {{check_gfer}}"
+    - "python-requests is  Installed: {{check_pyreq}}"
+    - "katello-agent is Installed: {{check_katagnt}}"
+
+
+- debug: 
+    msg: "Satellite Required Packages Check: {{chk_sat_pack}}"

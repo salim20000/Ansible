@@ -1,0 +1,13 @@
+- name: Check executable permissions on /tmp on {{ansible_hostname}}
+  debug:
+    msg: "{{ ansible_mounts|map(attribute='mount')|list }}"
+
+- set_fact:
+    chk_tmp_perm: "{{ 'Failed' if ('noexec' in ansible_mounts|json_query('[?mount == `/tmp`]|[0].options')) else 'Passed'}}"
+
+- debug: 
+    msg: "{{ansible_mounts|json_query('[?mount == `/tmp`]|[0].{name: mount, mount_options: options}')}}"
+
+- debug: 
+    msg: "exec permissions check on /tmp: {{chk_tmp_perm}}"
+

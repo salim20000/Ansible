@@ -1,0 +1,14 @@
+#Author:  GTS-ECCO-L2 Unix: Mohammad Salman Ali
+#Date: 29 March 2018
+---
+- name: Start tanium7
+  service:
+    name: taniumclient
+    enabled: yes
+    state: started
+
+- name: Start tanium6
+  service:
+    name: TaniumClient
+    enabled: yes
+    state: started
